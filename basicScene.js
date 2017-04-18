@@ -361,6 +361,16 @@ function degreeCentrality(){
       alert("cannot compute if not connected");
       }
   }
+
+  function graphDensity() {
+    var hm = graph.getAllEdgeCounts();
+    var g = Object.keys(hm).length; //number of nodes
+    var pc = (g * (g -1)) / 2; //potentional connections
+    var ac = graph.getAllEdges().length; //actual connections
+
+    var graphDensity = ac / pc;
+    alert('Graph Density is ' + graphDensity);
+  }
 /*function actorBTCentrality(id) {
   var hm = graph.getAllEdgeCounts();
     var g = Object.keys(hm).length;
