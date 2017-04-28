@@ -145,10 +145,12 @@ scene.onPointerDown = function (evt, pickResult) {
             } else {
                 var aDC = actorDegreeCentrality(id);
                 var aCC = actorCloseCentrality(id);
+                var aBT = actorBTCentrality(id);
                 //actorBTCentrality(id);
-                html = "Vertex " + id + " no data" + "<br>" +
+                html = "Vertex " + id + " " + "<br>" +
                         "Actor Degree Centrality " + aDC + "<br>" +
-                        "Actor Closeness Centrality " + aCC + "<br>";
+                        "Actor Closeness Centrality " + aCC + "<br>" +
+                       "Actor Betweenness Centrality " + aBT + "<br>";
             }
         } else {
             html = "Edge " + id + "<br>";
@@ -323,7 +325,7 @@ function degreeCentrality(){
             }
           }
       actorCC = ((1/ sum) * (g-1));  //sets node with inverse of total # of paths to hm
-      return actorCC;
+      return actorCC.toFixed(2);
   }
 
   function closenessCentrality() {
@@ -371,72 +373,118 @@ function degreeCentrality(){
     var graphDensity = ac / pc;
     alert('Graph Density is ' + graphDensity);
   }
-/*function actorBTCentrality(id) {
-  var hm = graph.getAllEdgeCounts();
-    var g = Object.keys(hm).length;
-    var sum = 0;
-    //finds path from nodei to every other
-  //  for(var j = 0; j < g; j++) {
-    //  for(var k = 0; k < j; k++){
-      //    if(j!=k){
-        //     console.log("Paths between: " + j + " "+ k);
-              var path = graph.BFSearch(1,4);
-              //var paths = graph.getPath(4,1);
-              //console.log("path 1 " + path);
-              //console.log("path 2 " + paths);
-        //  }
-        //}
-      //}
-      console.log("----");
-    //  paths[i] = sum;  //sets node with inverse of total # of paths to h
-}
-function btCentrality() {
-  var hm = graph.getAllEdgeCounts();
-  var numerator = 0;
-  var denominator = 0;
-  var largest = 0;
-  var g = Object.keys(hm).length;
-  var paths = {};
-  var linking; //gjk
-  var containing; //gjk(ni)
 
-  var denominator = [Math.pow(g/2, 2)] * (g-2);
-  console.log("Denom = " + denominator);
+  function actorBTCentrality(id) {
+    var hm = graph.getAllEdgeCounts();
+    var g = Object.keys(hm).length; //number of nodes
+    var proportions = [];
+    var aBTC =0;
+    var aBTCStandardized;
+    var standard = ((g-1)*(g-2))/2;
 
-
-  //loops paths for certain node
-  for(var i = 0; i < g; i++) {
-    var sum = 0;
-    //finds path from nodei to every other
-    for(var j = 0; j < g; j++) {
-      for(var k = 0; k < g; k++){
-          if(j!=k){
-            console.log("Paths between: " + j + " "+ k);
-            linking = graph.BFSearch(j,k);
-            if(linking != 0){
-              var path = graph.getPath(j,k);
-              var contain_i = checkContain(i, path);
-              var actor_between= contain_i/linking;
-              console.log("actor between: " + actor_between);
-            }
-          }
-        }
+    for(var i =0; i < g; i++) {
+      for (var j=0; j<i; j++) {
+        graph.setAllPaths(i,j);
+          var arrOfAllPaths = graph.printAllPaths();
+          var num_sp = numOfShortestPaths(arrOfAllPaths, id);
+          proportions[proportions.length] = num_sp;
       }
-      console.log("----");
     }
 
-    //  paths[i] = sum;  //sets node with inverse of total # of paths to hm
-}
-function checkContain(index, path){
-  var contains = 0;
-  for(var i = 0; i <path.length; i++){
-    if(path[i] == index){
-      contains++;
+    for(var k =0; k <proportions.length; k++) {
+         aBTC += proportions[k];
     }
+    aBTCStandardized = aBTC /standard;
+    return aBTCStandardized.toFixed(2);
   }
-  return contains;
-}
-*/
+
+  function numOfShortestPaths(arr, id) {
+    var count =0;
+    var contains =0;
+    var min = findSmallest(arr);
+    for(var i = 0; i < arr.length; i++)
+    {
+      if(arr[i].length == min){
+        count++;
+        contains += ifContains(arr[i], id);
+      }
+    }
+    return contains/count;
+  }
+
+  function findSmallest(arr) {
+    var smallest;
+    var min = arr[0].length;
+    for(var i = 0; i < arr.length; i++)
+    {
+      if(arr[i].length <= min){
+          min = arr[i].length;
+      }
+    }
+    return min;
+  }
+  function ifContains(arr, id) {
+    for(var i =1; i <arr.length -1; i++){
+      if(arr[i] == id){
+        return 1;
+      }
+    }
+    return 0;
+  }
+  function betweennessCentrality() {
+    var betweennessCentrality = 0;
+    var hm = graph.getAllEdgeCounts();
+    var g = Object.keys(hm).length; //number of nodes
+    var maxNode = 0;
+    var allBetweenness ={};
+    var add = 0;
+    var numerator = 0;
+
+    for(var i=0; i < g; i++){
+        allBetweenness[i] = actorBTCentrality(i);
+    }
+    //finds the max betweeness node
+    //console.log("length is " + allBetweenness.length);
+
+    for(var k in allBetweenness) {
+          if(allBetweenness[k] > maxNode) {
+            maxNode = allBetweenness[k];
+          }
+    }
+
+    for(var k in allBetweenness) {
+      add = maxNode - allBetweenness[k];
+      numerator += add;
+    }
+    var denominator = Math.pow((g-2),2) * (g-2);
+
+    betweennessCentrality = (numerator * 2) / denominator;
+    if(isNaN(betweennessCentrality)){
+      alert('No betweenness centrality');
+    }
+    else {
+      alert('The betweenness Centrality is ' +   betweennessCentrality);
+    }
+    return betweennessCentrality;
+
+  }
+/*
+  function actorBTCentrality(id) {
+    var hm = graph.getAllEdgeCounts();
+    var g = Object.keys(hm).length; //number of nodes
+    var i;
+    var j;
+    for(i =0; i <g; i++) {
+      for(j = 0; j<i; i++) {
+
+      }
+    }
+
+  }
+  function getGeodosecis(j,k) {
+    var path = graph.printAllPaths(j,k);
+    return path.length;
+  }
 /* returnLargestNode() takes hashmap of nodes with edges
  * returns the node with the largest amount of edges *
  */
